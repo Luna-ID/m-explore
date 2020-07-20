@@ -1,0 +1,8 @@
+# Define the goal
+bool start
+---
+# Define the result
+bool explored_stuff
+---
+# Define a feedback message
+bool exploring_stuff

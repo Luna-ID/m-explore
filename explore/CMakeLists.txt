@@ -13,9 +13,17 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   tf
+  genmsg
   visualization_msgs
 )
-
+## Define actions to control exploration cycle
+add_action_files(DIRECTORY action
+  FILES
+  Explore.action
+  )
+generate_messages(DEPENDENCIES
+	actionlib_msgs
+)
 ###################################
 ## catkin specific configuration ##
 ###################################
