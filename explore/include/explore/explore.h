@@ -47,12 +47,13 @@
 #include <move_base_msgs/MoveBaseAction.h>
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
-
+#include <actionlib/server/simple_action_server.h>
 #include <explore/costmap_client.h>
 #include <explore/frontier_search.h>
-
+#include <explore_lite/ExploreAction.h>
 namespace explore
 {
+typedef actionlib::SimpleActionServer<explore_lite::ExploreAction> ExploreServer;
 /**
  * @class Explore
  * @brief A class adhering to the robot_actions::Action interface that moves the
@@ -89,6 +90,8 @@ private:
   ros::NodeHandle relative_nh_;
   ros::Publisher marker_array_publisher_;
   tf::TransformListener tf_listener_;
+
+  ExploreServer es_;
 
   Costmap2DClient costmap_client_;
   actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>

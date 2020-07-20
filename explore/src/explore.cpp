@@ -39,6 +39,16 @@
 
 #include <thread>
 
+#include <explore_lite/ExploreAction.h>
+#include <actionlib/server/simple_action_server.h>
+#include <ros/console.h>
+
+
+void execute(const explore_lite::ExploreGoalConstPtr& goal, explore::ExploreServer* as)
+{
+  ROS_INFO("server processing goal");  
+  as->setSucceeded();
+}
 inline static bool operator==(const geometry_msgs::Point& one,
                               const geometry_msgs::Point& two)
 {
@@ -57,6 +67,7 @@ Explore::Explore()
   , move_base_client_("move_base")
   , prev_distance_(0)
   , last_markers_count_(0)
+  , es_(relative_nh_, "explore", boost::bind(&execute, _1, &es_), false)
 {
   double timeout;
   double min_frontier_size;
@@ -85,6 +96,9 @@ Explore::Explore()
   exploring_timer_ =
       relative_nh_.createTimer(ros::Duration(1. / planner_frequency_),
                                [this](const ros::TimerEvent&) { makePlan(); });
+  ROS_INFO("starting action server");
+  es_.start();
+  ROS_INFO("theoretically action server started");
 }
 
 Explore::~Explore()
