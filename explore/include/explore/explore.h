@@ -92,6 +92,9 @@ private:
   tf::TransformListener tf_listener_;
 
   ExploreServer es_;
+  
+  bool is_cancelled_=false;
+  bool has_succeeded_=false;
 
   Costmap2DClient costmap_client_;
   actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>

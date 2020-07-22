@@ -36,13 +36,11 @@
  *********************************************************************/
 
 #include <explore/explore.h>
-
+#include <ctime>
 #include <thread>
-
 #include <explore_lite/ExploreAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <ros/console.h>
-
 
 inline static bool operator==(const geometry_msgs::Point& one,
                               const geometry_msgs::Point& two)
@@ -83,11 +81,14 @@ Explore::Explore()
     marker_array_publisher_ =
         private_nh_.advertise<visualization_msgs::MarkerArray>("frontiers", 10);
   }
-
+  bool isCancelled;
+  bool hasSucceeded;
   ROS_INFO("Waiting to connect to move_base server");
   move_base_client_.waitForServer();
   ROS_INFO("Connected to move_base server");
-
+  exploring_timer_ =
+      relative_nh_.createTimer(ros::Duration(1. / planner_frequency_),
+                               [this](const ros::TimerEvent&) { makePlan(); }, false, false);
   ROS_INFO("starting action server");
   es_.start();
   ROS_INFO("theoretically action server started");
@@ -99,13 +100,22 @@ Explore::~Explore()
 }
 void Explore::execute(const explore_lite::ExploreGoalConstPtr& goal, explore::ExploreServer* as)
 {
-  exploring_timer_ =
-      relative_nh_.createTimer(ros::Duration(1. / planner_frequency_),
-                               [this](const ros::TimerEvent&) { makePlan(); });
-  ROS_INFO("server processing goal");
-  as->setSucceeded();
-}
+	explore_lite::ExploreResult result;
+	result.explored_stuff=true;
+	ROS_INFO("server processing goal");
+  	start();
+	while(!has_succeeded_ && !is_cancelled_){}
+	if (has_succeeded_)
+	{	
+		es_.setSucceeded(result);
+	}
+	else if(is_cancelled_)
+	{	
+		es_.setPreempted();
+	}
+	stop();
 
+}
 void Explore::visualizeFrontiers(
     const std::vector<frontier_exploration::Frontier>& frontiers)
 {
@@ -192,6 +202,10 @@ void Explore::visualizeFrontiers(
 
 void Explore::makePlan()
 {
+if(es_.isPreemptRequested())
+{
+is_cancelled_=true;
+}
   // find frontiers
   auto pose = costmap_client_.getRobotPose();
   // get frontiers sorted according to cost
@@ -200,12 +214,13 @@ void Explore::makePlan()
   for (size_t i = 0; i < frontiers.size(); ++i) {
     ROS_DEBUG("frontier %zd cost: %f", i, frontiers[i].cost);
   }
-
+/*
   if (frontiers.empty()) {
-    stop();
+	  stop();
+	  es_.setSucceeded();
     return;
   }
-
+*/
   // publish frontiers as visualization markers
   if (visualize_) {
     visualizeFrontiers(frontiers);
@@ -218,7 +233,7 @@ void Explore::makePlan()
                          return goalOnBlacklist(f.centroid);
                        });
   if (frontier == frontiers.end()) {
-    stop();
+    has_succeeded_=true;
     return;
   }
   geometry_msgs::Point target_position = frontier->centroid;
