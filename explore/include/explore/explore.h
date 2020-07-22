@@ -73,7 +73,7 @@ private:
    * @brief  Make a global plan
    */
   void makePlan();
-
+  void execute(const explore_lite::ExploreGoalConstPtr& goal, ExploreServer* as);
   /**
    * @brief  Publish a frontiers as markers
    */
